@@ -1,7 +1,7 @@
 {
 	"manifest_version": 1,
-	"id": "eau.aram.tasks",
-	"app_min_version": "3.3",
+	"id": "eau.aram.todo-tasks",
+	"app_min_version": "3.2",
 	"version": "1.0.0",
 	"name": "Eau Tasks",
 	"description": "Plugin to manage the tasks I am working on at the moment",

@@ -1,0 +1,20 @@
+<div class="tasks-container">
+  <div class="tasks-today-title-container">
+    <h3 class="tasks-today-title">Today</h3>
+    <button class="tasks-button" onclick="addTask(true)">
+      <i class="fas fa-plus"></i>
+    </button>
+  </div>
+  <div class="tasks-backlog-title-container">
+    <h3 class="tasks-backlog-title">Backlog</h3>
+    <button class="tasks-button" onclick="addTask(false)">
+      <i class="fas fa-plus"></i>
+    </button>
+  </div>
+  <div class="tasks-today-list-container">
+    {{ today }}
+  </div>
+  <div class="tasks-backlog-list-container">
+    {{ backlog }}
+  </div>
+</div>
