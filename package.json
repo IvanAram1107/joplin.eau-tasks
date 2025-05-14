@@ -2,6 +2,9 @@
   "name": "joplin-plugin-eau-tasks",
   "version": "1.0.0",
   "scripts": {
+    "copy": "cp ../common/*.css  ../common/*.ts ./src/",
+    "postcopy": "node ../common/updatePluginConfig",
+    "predist": "npm run copy",
     "dist": "webpack --env joplin-plugin-config=buildMain && webpack --env joplin-plugin-config=buildExtraScripts && webpack --env joplin-plugin-config=createArchive",
     "prepare": "npm run dist",
     "updateVersion": "webpack --env joplin-plugin-config=updateVersion",
