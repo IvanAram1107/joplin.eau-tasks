@@ -6,6 +6,5 @@
 		"jsx": "react",
 		"allowJs": true,
 		"baseUrl": ".",
-		"lib": ["ES2021"]
 	}
 }

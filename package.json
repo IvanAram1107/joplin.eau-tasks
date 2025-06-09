@@ -1,6 +1,6 @@
 {
   "name": "joplin-plugin-eau-tasks",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "scripts": {
     "copy": "cp ../common/*.css  ../common/*.ts ./src/",
     "postcopy": "node ../common/updatePluginConfig",

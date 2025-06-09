@@ -1,12 +1,16 @@
-import { EauButton, EauCheckbox, EauDialog, EauDialogInput, EauListItem, EauPlacement } from "./eau.types";
+/* DO NOT MODIFY THIS FILE, IT WILL BE REPLACED */
 
-function getOrder(placement: EauPlacement) {
+import { EauButton, EauCheckbox, EauDialog, EauDialogInput, EauDropdown, EauListItem, EauPlacement } from "./eau.types";
+
+function getOrder(placement?: EauPlacement) {
   if(placement === 'start'){
     return 'order: -1';
   } else if(placement === 'end') {
     return 'order: 1';
-  } else {
+  } else if(typeof placement === "number"){
     return `order: ${placement}`
+  } else {
+    return '';
   }
 }
 
@@ -24,17 +28,21 @@ export const Templates = {
   dialogInput(input: EauDialogInput){
     return `<div class="eau-form-field">
       <label for="${ input.id }" class="eau-label">${ input.label }</label>
-      <input id="${ input.id }" name="${ input.id }" class="eau-input" placeholder />
+      <input id="${ input.id }" name="${ input.id }" type="${ input.type }" class="${ input.type === 'checkbox' ? 'eau-checkbox-input' : 'eau-input' }" ${input.type !== "checkbox" ? 'placeholder' : ''} />
     </div>`;
   },
-  list(items: EauListItem[]){
-    return `<div class='eau-list'>
+  list(height: number, items: EauListItem[]){
+    return `<div class='eau-list eau-scrollbar' style="max-height: ${height}px;">
       ${ items.map(item => this.listItem(item)).join("\n") }
     </div>`;
   } ,
   listItem(item: EauListItem) {
-    let html = '<div class="eau-list-item">';
-    html += `<span class="eau-list-item-label" style="order: 0;">${item.label}</span>`;
+    let html = `<div class="eau-list-item ${item.classes?.join(' ') || ''}">`;
+    if(item.label) {
+      html += `<span class="eau-list-item-label" style="order: 0;">${item.label}</span>`;
+    } else if(item.content) {
+      html += item.content;
+    }
     if(item.checkbox) {
       if("length" in item.checkbox){
         html += item.checkbox.map(ch => this.checkbox(ch)).join("\n");
@@ -53,14 +61,21 @@ export const Templates = {
     return html;
   },
   button(button: EauButton){
-    return `<button class="eau-list-item-button" onclick="${button.onclick}"
-            style="${button.placement ? getOrder(button.placement) : ''}">
-          ${button.content}
-        </button>`;
+    return `<button class="eau-list-item-button" onclick="${button.onclick}" style="${getOrder(button.placement)}">
+              ${button.content}
+            </button>`;
   },
   checkbox(checkbox: EauCheckbox){
-    return `<span class="eau-list-item-checkbox" style="${checkbox.placement ? getOrder(checkbox.placement) : ''}"
+    return `<span class="eau-list-item-checkbox" style="${getOrder(checkbox.placement)}"
             data-checked="${typeof(checkbox.value) === 'boolean' ? +checkbox.value : checkbox.value}"
             onclick="${checkbox.onclick}"></span>`
+  },
+  dropdown(dropdown: EauDropdown) {
+    return `<div class="eau-dropdown" id="${dropdown.id}">
+              <span class="eau-dropdown-label">${dropdown.label}</span>
+              <div class="eau-dropdown-content">
+                ${dropdown.items.map(i => `<p class="eau-dropdown-item" onclick="eauDropdownChange('${dropdown.id}', '${i}')">${i}</p>`).join("\n")}
+              </div>
+            </div>`;
   }
 }

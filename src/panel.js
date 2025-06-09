@@ -1,9 +1,9 @@
 
-function toggleCompleted(element, taskId) {
+function complete(element, taskId) {
   const currValue = element.getAttribute("data-checked");
   element.setAttribute("data-checked", (+currValue + 1) % 2);
   webviewApi.postMessage({
-    name: 'toggleCompleted',
+    name: 'complete',
     taskId,
   });
 }

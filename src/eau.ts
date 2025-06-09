@@ -1,5 +1,7 @@
+/* DO NOT MODIFY THIS FILE, IT WILL BE REPLACED */
+
 import joplin from "api";
-import { EauCommand, EauConfig, EauDebtEntity, EauDialog, EauNote, EauNotebook, EauPanelResponse, EauSettingsSection, EauTask } from "./eau.types";
+import { EauCommand, EauConfig, EauDebtEntity, EauDialog, EauNote, EauNotebook, EauPanelResponse, EauSettingsSection, EauShoppingItem, EauTask } from "./eau.types";
 import { Templates } from './eau.templates';
 
 
@@ -11,15 +13,16 @@ export class Eau {
 
   public async init() {
     await this.getRootNotebookId();
-    await this.getEauConfig();
+    const config = await this.getEauConfig();
+    this.config = {
+      debt: [],
+      tasks: [],
+      shopping: [],
+      ...config
+    }
   }
 
   private async getEauConfig() {
-    this.config = {
-      noteId: "",
-      debt: [],
-      tasks: []
-    }
     let note: EauNote;
     const response = await joplin.data.get(["search"], {
       fields: ["id", "body"],
@@ -28,19 +31,22 @@ export class Eau {
     if(response?.items?.length) {
       note = response.items[0];
     } else {
-      note = await joplin.data.post(["notes"], null, { 
-        title: this.configNoteTitle,
-        body: JSON.stringify(this.config, null, 2),
-        parent_id: this.rootNotebookId
-      });
+      note = await this.createEauConfigNote();
     }
-    if(note.body) {
-      this.config = {
-        ...this.config,
-        ...JSON.parse(note.body)
-      }
-    }
-    this.config.noteId = note.id;
+    let config: any = {
+      noteId: note.id,
+      ...JSON.parse(note.body)
+    };
+    return config;
+  }
+
+  private async createEauConfigNote() {
+    const note = await joplin.data.post(["notes"], null, { 
+      title: this.configNoteTitle,
+      body: "{}",
+      parent_id: this.rootNotebookId
+    });
+    return note;
   }
 
   private async getRootNotebookId() {
@@ -60,33 +66,56 @@ export class Eau {
     this.rootNotebookId = notebook.id;
   }
 
-  private async updateConfig() {
+  private async saveConfig() {
     if(this.config){
       await joplin.data.put(["notes", this.config.noteId], null, {
-        body: JSON.stringify(this.config, null, 2)
+        body: JSON.stringify(this.config)
       });
     }
   }
 
+  public getAttr(key: string): any {
+    return this.config[key] || null;
+  }
+
+  public async setAttr(key: string, value: any) {
+    const config = await this.getEauConfig();
+    this.config = {
+      ...config,
+      [key]: value
+    }
+    await this.saveConfig();
+  }
+
+  public getShopping(): EauShoppingItem[] {
+    return this.getAttr("shopping") || [];
+  }
+
+  public async setShopping(shoppingList: EauShoppingItem[]) {
+    await this.setAttr("shopping", shoppingList);
+  }
+
   public getDebt(): EauDebtEntity[] {
-    return this.config.debt || [];
+    return this.getAttr("debt") || [];
   }
 
   public async setDebt(debtEntities: EauDebtEntity[]) {
-    this.config.debt = debtEntities;
-    await this.updateConfig();
+    await this.setAttr("debt", debtEntities);
   }
 
   public getTasks(): EauTask[] {
-    return this.config.tasks || [];
+    return this.getAttr("tasks") || [];
   }
 
   public async setTasks(tasks: EauTask[]) {
-    this.config.tasks = tasks;
-    await this.updateConfig();
+    await this.setAttr("tasks", tasks);
   }
 
+  ////////////////////////////////////
+  ////////////////////////////////////
   ////////// STATIC METHODS //////////
+  ////////////////////////////////////
+  ////////////////////////////////////
 
   public static async setupSettings(section: EauSettingsSection) {
     await joplin.settings.registerSection(section.id, {
@@ -162,13 +191,13 @@ export class Eau {
       const res = await fn();
       return res;
     } catch (error) {
-      console.error(error);
+      return null;
     }
   }
 
   public static async createPanel(panelBaseName: string, useCommonCss: boolean): Promise<EauPanelResponse> {
     const panel = await joplin.views.panels.create(`eau-panel-${panelBaseName}`);
-    const html = await Eau.safeRunFunction(() => Eau.readHtml(`${panelBaseName}.html`));
+    const html = await Eau.readHtml(`${panelBaseName}.html`);
     await Eau.safeRunFunction(() => joplin.views.panels.addScript(panel, `./${panelBaseName}.js`));
     await Eau.safeRunFunction(() => joplin.views.panels.addScript(panel, `./${panelBaseName}.css`));
     if(useCommonCss) {

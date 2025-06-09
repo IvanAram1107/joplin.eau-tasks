@@ -65,9 +65,7 @@
 }
 
 .tasks-container .tasks-today-title-container,
-.tasks-container .tasks-backlog-title-container,
-.tasks-container .tasks-today-list-container,
-.tasks-container .tasks-backlog-list-container {
+.tasks-container .tasks-backlog-title-container {
   padding: 8px;
 }
 

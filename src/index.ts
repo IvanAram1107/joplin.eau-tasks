@@ -47,20 +47,17 @@ class TaskArray extends Array<EauTask> {
 	}
 
 	private get today(): EauTask[] {
-		return this.filter(t => t.dueToday).sort((_, b) => b.completed ? -1 : 0);
+		return this.filter(t => t.dueToday).sort((a, b) => a.description.localeCompare(b.description));
 	}
 
 	private get backlog(): EauTask[] {
-		return this.filter(t => !t.dueToday).sort((_, b) => b.completed ? -1 : 0);
+		return this.filter(t => !t.dueToday).sort((a, b) => a.description.localeCompare(b.description));
 	}
 
-	public getHtml(category: string, showCompleted: boolean) {
+	public getHtml(category: string, listItemsNum: number) {
 		let tasks = category === "today" ? this.today : this.backlog;
-		if(!showCompleted){
-			tasks = tasks.filter(t => !t.completed)
-		}
 		if(!tasks.length) return `<p style="margin-top: 12px;">No items ${category === "today" ? 'for today' : 'in the backlog'}</p>`;
-		return Templates.list(tasks.map<EauListItem>(task => {
+		return Templates.list(listItemsNum * 38, tasks.map<EauListItem>(task => {
 			const listItem: EauListItem = {
 				label: task.description, 
 				button: {
@@ -71,8 +68,8 @@ class TaskArray extends Array<EauTask> {
 			}
 			if(category === "today") {
 				listItem.checkbox = {
-					value: task.completed,
-					onclick: `toggleCompleted(this, '${task.id}')`,
+					value: false,
+					onclick: `complete(this, '${task.id}')`,
 					placement: "start"
 				}
 			}
@@ -85,15 +82,14 @@ class TaskArray extends Array<EauTask> {
 			id,
 			description,
 			dueToday,
-			completed: false,
 		}
 		this.unshift(newTask);
 	}
 
-	public toggleCompleted(id: string) {
-		const task = this.find(task => task.id === id);
-		if(task) {
-			task.completed = !task.completed;
+	public complete(id: string) {
+		const idx = this.findIndex(task => task.id === id);
+		if(idx >= 0) {
+			this.splice(idx, 1);
 		}
 	}
 
@@ -110,21 +106,21 @@ joplin.plugins.register({
 		const eau = new Eau();
 		await eau.init();
 		const {panel, html} = await Eau.createPanel("panel", true);
-		const tasks = TaskArray.fromEauTaskList(await eau.getTasks());
+		const tasks = TaskArray.fromEauTaskList(eau.getTasks());
 		await Eau.setupSettings({
 			id: "eauTasksSettings",
 			label: "Eau - Tasks",
 			settings: [{
-				id: "showCompletedTasks",
+				id: "maxListItems_Tasks",
 				description: "",
-				label: "Show Completed tasks",
-				value: false,
-				type: SettingItemType.Bool
+				label: "Max number of list items",
+				value: 8,
+				type: SettingItemType.Int
 			}]
 		});
 		const refreshHtml = async () => {
-			const showCompleted = await Eau.getSetting("showCompletedTasks");
-			await joplin.views.panels.setHtml(panel, Eau.replaceTemplateVars(html, (match) => tasks.getHtml(match, showCompleted)));
+			const listItemsNum = await Eau.getSetting("maxListItems_Tasks");
+			await joplin.views.panels.setHtml(panel, Eau.replaceTemplateVars(html, (match) => tasks.getHtml(match, listItemsNum)));
 		}
 		await Eau.setupCommands([{
 			id: "eauRefreshTasks",
@@ -138,14 +134,15 @@ joplin.plugins.register({
 			title: "Add Task",
 			inputs: [{
 				id: "eau-description-input",
-				label: "Description"
+				label: "Description",
+				type: "text"
 			}]
 		})
 
 		await joplin.views.panels.onMessage(panel, async (message: PanelMessage) => {
 			if(isPanelMessageWithTask(message)) {
-				if (message.name === 'toggleCompleted') {
-					tasks.toggleCompleted(message.taskId);
+				if (message.name === 'complete') {
+					tasks.complete(message.taskId);
 				} else if(message.name === 'toggleDueToday') {
 					tasks.toggleDueToday(message.taskId);
 				}
